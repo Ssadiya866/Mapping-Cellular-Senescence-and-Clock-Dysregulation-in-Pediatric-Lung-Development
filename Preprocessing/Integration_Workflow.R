@@ -19,6 +19,7 @@ library(dplyr)
 library(Matrix)
 library(ggplot2)
 library(DoubletFinder)
+library(harmony)
 library(Azimuth)
 # -----------------------------------------------------------------------------
 # STEP 1. Create Seurat objects from individual samples
@@ -68,12 +69,14 @@ library(Azimuth)
 # Highly variable genes were identified using FindVariableFeatures()
 # prior to integration.
 # -----------------------------------------------------------------------------
-# STEP 5. Dataset Integration
-# Individual samples were integrated using the Seurat integration workflow.
-# Integration anchors were identified across samples and used to generate
-# a batch-corrected integrated expression space.
+# # STEP 5. Dataset Integration and Batch Correction
+# Individual sample Seurat objects were merged into a combined object.
+# Batch correction/integration was performed using Harmony within the
+# Seurat workflow.
+# The Harmony-corrected object was used for downstream dimensionality
+# reduction, clustering, annotation, and figure generation.
 # -----------------------------------------------------------------------------
-# STEP 5A. Scaling and Dimensionality Reduction
+# STEP 6. Scaling and Dimensionality Reduction
 # -----------------------------------------------------------------------------
 
 # Integrated data were scaled using ScaleData().
@@ -83,7 +86,7 @@ library(Azimuth)
 # Uniform Manifold Approximation and Projection (UMAP) was generated
 # using RunUMAP() for visualization of cellular relationships.
 # -----------------------------------------------------------------------------
-# STEP 6. Cluster Identification
+# STEP 7. Cluster Identification
 # -----------------------------------------------------------------------------
 
 # Graph-based clustering was performed using FindNeighbors()
@@ -92,7 +95,7 @@ library(Azimuth)
 # Cluster resolution parameters were optimized to identify
 # biologically meaningful populations.
 # -----------------------------------------------------------------------------
-# STEP 7. Cell Type Annotation
+# STEP 8. Cell Type Annotation
 # -----------------------------------------------------------------------------
 
 # Cell identities were assigned using Azimuth reference mapping.
@@ -103,7 +106,7 @@ library(Azimuth)
 # Azimuth Level 1 annotations were used as the primary cell class labels
 # and refined using canonical marker gene expression when required.
 # -----------------------------------------------------------------------------
-# STEP 8. Marker Gene Analysis
+# STEP 9. Marker Gene Analysis
 # -----------------------------------------------------------------------------
 
 # Cluster marker genes were identified using FindAllMarkers().
