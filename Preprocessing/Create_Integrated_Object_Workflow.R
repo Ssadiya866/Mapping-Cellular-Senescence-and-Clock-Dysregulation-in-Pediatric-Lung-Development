@@ -1,6 +1,21 @@
 # Create_Integrated_Object_Workflow.R
 # Workflow describing generation of the integrated pediatric
 # lung snRNA-seq Seurat object used for downstream analyses.
+#
+# Object lineage:
+# PT_NEWBORN_cds.rds
+# FT_NEWBORN_cds.rds
+# INFANT_cds.rds
+# Children_cds.rds
+# Adolescent_cds.rds
+# Young_Adult_cds.rds
+# Aged_or_Diseased_cds.rds
+# PT_BPD_cds.rds
+#   -> merged_seurat_no_filter.rds
+#   -> merged_seurat_filtered.rds
+#   -> merged_harmony.rds
+#   -> lung_query_after_azimuth.rds
+#   -> lungQuery_After_Az_Normalized.rds (final integrated object)
 
 library(Seurat)
 library(DoubletFinder)
@@ -9,7 +24,7 @@ library(Azimuth)
 library(dplyr)
 
 # Input objects
-# Individual donor/group Seurat objects were generated from filtered Cell Ranger count matrices.
+# Individual donor/group Seurat objects were generated from filtered 10X/Cell Ranger count matrices.
 
 input_objects <- c(
   "PT_NEWBORN_cds.rds",
@@ -33,7 +48,7 @@ input_objects <- c(
 
 # Step 2. Doublet removal
 # Putative doublets were identified using DoubletFinder.
-# # Only singlet nuclei were retained for downstream analyses.
+# Only singlet nuclei were retained for downstream analyses.
 
 # Step 3. Merge samples
 # merged_seurat <- merge(sample1, y = list(sample2, sample3, sample4))
@@ -64,6 +79,10 @@ input_objects <- c(
 # )
 # merged_seurat <- ScaleData(merged_seurat)
 # merged_seurat <- RunPCA(merged_seurat, npcs = 30)
+
+# Principal components 1:30 were retained for Harmony integration,
+# UMAP visualization, neighborhood graph construction,
+# and unsupervised clustering.
 
 # Step 6. Harmony integration / batch correction
 # Batch correction and integration were performed using Harmony.
@@ -97,12 +116,8 @@ input_objects <- c(
 # Step 8. Azimuth / HLCA annotation
 # Cell identities were assigned using the Human Lung Cell Atlas reference
 # through Azimuth mapping.
-
-# lung_query_after_azimuth <- RunAzimuth(
-#   query = merged_harmony,
-#   reference = "human_lung"
-# )
-
+# Azimuth Level 1 and finer-resolution annotations were used
+# as the primary cell identity labels for downstream analyses.
 # saveRDS(lung_query_after_azimuth, file = "lung_query_after_azimuth.rds")
 
 # Step 9. Marker validation
@@ -118,4 +133,7 @@ canonical_markers <- list(
 # Step 10. Final object
 # Annotation refinement, metadata organization, normalization,
 # and downstream preparation steps were completed.
-# saveRDS(lung_query_after_azimuth, file = "lungQuery_After_Az_Normalized.rds")
+
+# Final normalized and annotated object
+# saveRDS(lung_query_after_azimuth,
+#         file = "lungQuery_After_Az_Normalized.rds")
