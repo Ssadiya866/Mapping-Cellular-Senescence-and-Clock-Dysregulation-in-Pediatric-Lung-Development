@@ -1,0 +1,322 @@
+---
+title: "Rahman_Visium_HD_062925"
+author: "Jennifer Becker"
+date: "2026-06-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Rahman_VisiumHD_060925
+```{r}
+merged_new <- readRDS("merged_new.rds")
+```
+
+```{r}
+DimPlot(merged_new, group.by = "seurat_clusters", reduction = "umap", label = F) + NoLegend()
+```
+
+
+### Could not run PrepSCTFindMarkers when the umi assay had different names
+```{r}
+slot(object = merged_new@assays$SCT@SCTModel.list[[1]], name="umi.assay")<-"SCT"
+slot(object = merged_new@assays$SCT@SCTModel.list[[2]], name="umi.assay")<-"SCT"
+merged_new <- PrepSCTFindMarkers(merged_new, assay = "SCT", verbose = T)
+cluster_markers <- FindAllMarkers(merged_new,assay = "SCT", only.pos = F)
+```
+
+```{r}
+library(openxlsx)
+library(dplyr)
+cluster_markers <- cluster_markers %>% dplyr::filter(p_val_adj < 0.05)
+write.csv(cluster_markers, "Rahman_060925_cluster_markers_only_sig.csv")
+```
+
+### Subsetting samples to generate Spatial Feature Plots
+```{r}
+Sample_D290_RLL_10B2 <- subset(merged_new, idents = "Ctrl")
+Sample_D170_RLL_9A4 <- subset(merged_new, idents = "Treatment")
+```
+
+```{r}
+gene_list <- c("CDKN1A", "CDKN2A", "GLB1", "TP53", "GDF15", "WRAP53", "FOXO4", "IL6", "IL6ST", "CXCL8", "MMP1", "MMP3", "SERPINE1", "VEGFA", "FGF2", "IGF1", "IGFBP7", "HGF", "TGFB1", "TGFBR2", "EGFR", "SFTPA1", "SFTPB", "SFTPC", "EPCAM", "CLDN18", "NKX2-1", "COL1A1", "FN1", "DCN", "PDGFRA", "PDGFRB", "ACTA2", "VIM", "NGF", "CD74", "HLA-DRA", "APOE", "AOPEP", "POU5F1", "SOX2", "KLF4", "MYC", "SOX2")
+```
+
+
+### Loop through Gene list to create a large number of Spatial Feature Plots
+```{r}
+
+library(purrr)  
+
+DefaultAssay(Ctrl) <- "SCT"  
+
+new_genes <- c(
+  "COL3A1", "CDKN1A","CDKN2A","GLB1","TP53","GDF15","WRAP53","FOXO4",
+  "IL6","IL6ST","CXCL8","MMP1","MMP3","SERPINE1","VEGFA","FGF2",
+  "IGF1","IGFBP7","HGF","TGFB1","TGFBR2","EGFR",
+  "SFTPA1","SFTPB","SFTPC","EPCAM","CLDN18","NKX2-1",
+  "COL1A1","FN1","DCN","PDGFRA","PDGFRB","ACTA2","VIM","NGF",
+  "CD74","HLA-DRA","APOE","AOPEP",
+  "POU5F1","SOX2","KLF4","MYC","KRT7", "KRT19"
+) |> unique()
+
+updated_list <- c("IL17A", "IL17RA", "ACT1", "NFKB1", "CXCL1", "CXCL2", "CCL20", "S100A8", "MB21D1", "TMEM173", "TBK1", "IRF3", "IFNB1", "ISG15", "TREX1", "DDX41", "IFI16", "MMP2", "TIMP1", "CTGF", "SERPINE1", "PDGFA", "POSTN", "LOXL2", "GADD45A", "H2AFX", "IL1A", "IL1B", "MMP1", "MMP3", "MMP9", "CCL2", "MX1", "MX2", "OAS1", "RSAD2", "YAP1", "COL5A1", "SPARC", "NFE2L2", "HMOX1", "NQO1", "GCLC", "GCLM", "SOD2", "PRDX6", "GSK3B", "LEF1", "AXIN2", "SFRP1", "WNT5A", "WNT3A", "FZD2", "FZD5", "ROR2", "DKK1", "TGFBR1", "TCF7")
+
+## ---- keep only genes present in merged_newect ----------------------------------
+present_genes  <- intersect(updated_list, rownames(Day_3))
+missing_genes  <- setdiff(updated_list, rownames(Day_3))
+
+message(length(present_genes), " genes found in merged_newect; ",
+        length(missing_genes), " missing.")
+
+## ---- make output folder --------------------------------------------------
+out_dir <- "Updated_Ctrl_Spatial_feature"
+dir.create(out_dir, showWarnings = FALSE)
+
+## ---- plot + save ---------------------------------------------------------
+walk(present_genes, function(g) {
+  tryCatch({
+    p <- ImageFeaturePlot(
+         Ctrl, features = g, dark.background = FALSE, cols =  c("gray", "#ff0000", "orange", "purple")
+        ) +
+        ggtitle(g) +
+        theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+    ggsave(
+      filename = file.path(out_dir, paste0("feature_", g, ".svg")),
+      plot     = p,
+      width    = 5,
+      height   = 5,
+      dpi      = 300,
+      device   = "svg"
+    )
+    message("✓ saved ", g)
+  }, error = function(e) {
+    message("failed on ", g, " – ", conditionMessage(e))
+  })
+})
+
+if (length(missing_genes))
+  message("Genes absent from merged_newect and therefore skipped:\n",
+          paste(missing_genes, collapse = ", "))
+
+```
+
+
+
+```{r}
+SpatialDimPlot(Sample_D290_RLL_10B2, label = F, repel = T, label.size = 4, image.scale = "lowres", facet.highlight = T, group.by = "seurat_clusters")  & guides(fill = guide_legend(override.aes = list(size=2)))
+```
+
+```{r}
+options(future.globals.maxSize = 100 * 1024^3)ls
+merged_new <- RunAzimuth(merged_new, reference = "lungref")
+```
+
+```{r}
+cell_type_markers <- FindAllMarkers(merged_new,assay = "SCT", only.pos = F)
+```
+
+```{r}
+cell_type_markers <- cell_type_markers %>% dplyr::filter(p_val_adj < 0.05)
+write.csv(cell_type_markers, "Rahman_060925_cell_type_markers_level_3_only_sig.csv")
+```
+
+### To run differential expression between conditions within the same cell-type
+```{r}
+merged_new$cells_level_1 <- paste(merged_new$predicted.ann_level_1, merged_new$Type, sep = "_")
+merged_new$cells_level_3 <- paste(merged_new$predicted.ann_level_3, merged_new$Type, sep = "_")
+```
+
+```{r}
+AT2_Myofibroblasts <- subset(merged_new, idents = c("AT2", "Myofibroblasts"))
+```
+
+```{r}
+heatmap_markers <- FindAllMarkers(AT2_Myofibroblasts, assay = "SCT", only.pos = TRUE)
+markers %>%
+  group_by(cluster) %>%
+  dplyr::filter(avg_log2FC > 1) %>%
+  slice_head(n = 50) %>%
+  ungroup() -> top50
+```
+
+```{r}
+downsampled <- ScaleData(downsampled, assay = "SCT", features = top5$gene)
+p <- DoHeatmap(downsampled, assay = "SCT", features = top5$gene, size = 2.5) + theme(axis.text = element_text(size = 5.5)) + NoLegend()
+p
+```
+
+
+### Loop through large list of comparisons for differential expression
+```{r}
+comparisons <- list(
+  Fibromyocytes = c("Fibromyocytes_Treatment", "Fibromyocytes_Ctrl"),
+  Macrophages = c("Macrophages_Treatment", "Macrophages_Ctrl"),
+  AT1 = c("AT1_Treatment", "AT1_Ctrl"),
+  AT2 = c("AT2_Treatment", "AT2_Ctrl"),
+  Fibroblasts = c("Fibroblasts_Treatment", "Fibroblasts_Ctrl"),
+  Monocytes = c("Monocytes_Treatment", "Monocytes_Ctrl"),
+  Lymphatic_EC_mature = c("Lymphatic EC mature_Treatment", "Lymphatic EC mature_Ctrl"),
+  Lymphatic_EC_differentiating = c("Lymphatic EC differentiating_Treatment", "Lymphatic EC differentiating_Ctrl"),
+  Dendritic_cells = c("Dendritic cells_Treatment", "Dendritic cells_Ctrl"),
+  T_cell_lineage = c("T cell lineage_Treatment", "T cell lineage_Ctrl"),
+  EC_venous = c("EC venous_Treatment", "EC venous_Ctrl"),
+  EC_capillary = c("EC capillary_Treatment", "EC capillary_Ctrl"),
+  Basal_Treatment = c("Basal_Treatment", "Basal_Ctrl"),
+  B_cell_lineage = c("B cell lineage_Treatment", "B cell lineage_Ctrl"),
+  EC_arterial = c("EC arterial_Treatment", "EC arterial_Ctrl"),
+  Myofibroblasts = c("Myofibroblasts_Treatment", "Myofibroblasts_Ctrl"),
+  Secretory = c("Secretory_Treatment", "Secretory_Ctrl"),
+  Submucosal_Secretory = c("Submucosal Secretory_Treatment", "Submucosal Secretory_Ctrl"),
+  SM_activated_stress_response = c("SM activated stress response_Treatment", "SM activated stress response_Ctrl"),
+  Multiciliated_lineage = c("Multiciliated lineage_Treatment", "Multiciliated lineage_Ctrl"),
+  Rare = c("Rare_Treatment", "Rare_Ctrl"))
+
+de_results <- list()
+
+# Loop through the comparisons
+for (cell_type in names(comparisons)) {
+  ids <- comparisons[[cell_type]]
+  de_results[[cell_type]] <- FindMarkers(
+    merged_new,
+    ident.1 = ids[1],
+    ident.2 = ids[2],
+    assay = "SCT",
+    only.pos = FALSE
+  )
+}  
+   
+dir.create("DE", showWarnings = FALSE)
+
+# Write results to CSV files in the DE directory
+for (cell_type in names(de_results)) {
+  write.csv(de_results[[cell_type]], file = file.path("DE", paste0("DE_", cell_type, ".csv")))
+}             
+  
+```
+
+### Cell counts and proportion plots
+```{r}
+library(reshape)
+
+#Idents(AT2_Myofibroblasts) <- (AT2_Myofibroblasts$Type)
+sample.counts.table <- as.data.frame.matrix(table(merged_05$seurat_clusters, merged_05$Type))
+sample.counts.table.melt <- melt(sample.counts.table)
+colnames(sample.counts.table.melt) <- c("Condition", "Count")
+```
+
+### Proportions plot for seurat clusters
+```{r}
+sample.counts.table.melt$cluster <- rep(0:((nrow(sample.counts.table.melt) - 1) / 2), 2)
+colnames(sample.counts.table.melt)[2] <- "Count"
+ggplot(sample.counts.table.melt, aes(x = cluster, y = Count, fill = Condition)) + geom_bar(stat = "identity") + scale_x_continuous("Cluster", labels = as.character(c(0:(max(unique(as.numeric(merged_05$seurat_clusters)))-1))), breaks = c(0:(max(unique(as.numeric(merged_05$seurat_clusters)))-1)))
+```
+
+### Proportions per cell type
+```{r}
+Idents(merged_05) <- merged_05$predicted.ann_level_3
+sample.counts.table <- as.data.frame.matrix(table(merged_05$predicted.ann_level_3, merged_05$Type))
+sample.counts.table.melt <- melt(sample.counts.table)
+```
+
+
+```{r}
+sample.counts.table.melt$cell_type <- rep(0:((nrow(sample.counts.table.melt) - 1) / 2), 2)
+colnames(sample.counts.table.melt)[2] <- "Count"
+ggplot(sample.counts.table.melt, aes(x = Cell_Type, y = Count, fill = variable)) + geom_bar(stat = "identity") + scale_x_continuous("Cell Type", labels = as.character(c(0:(max(unique(as.numeric(AT2_Myofibroblasts$predicted.ann_level_3)))-1))), breaks = c(0:(max(unique(as.numeric(AT2_Myofibroblasts$predicted.ann_level_3)))-1)))
+```
+
+```{r}
+library(tidyverse)
+df <- data.frame(
+  CellType = c("AT2", "Myofibroblasts"),
+  Ctrl = c(32724, 805),
+  Treatment = c(21997, 990)
+)
+
+library(reshape)
+library(dplyr)
+library(ggplot2)
+
+df_long <- melt(df, id.vars = "CellType", variable.name = "Cell_Type", value.name = "Count")
+colnames(df_long)[2] <- "Condition"
+df_long <- df_long %>%
+  group_by(CellType) %>%
+  mutate(Proportion = value / sum(value))
+```
+
+```{r}
+ggplot(df_long, aes(x = CellType, y = Proportion, fill = Condition)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme_minimal() +
+  ylab("Proportion") +
+  xlab("Cell Type") +
+  scale_fill_brewer(palette = "Set2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Testing colors for Spatial Feature Plot
+```{r}
+ImageFeaturePlot(Sample_D170_RLL_9A4, features = "COL3A1", dark.background = FALSE, cols =  c("darkgrey", "#ff0000", "orange", "purple"))
+```
+
+```{r}
+AT1 <- subset(merged_new, idents = "AT1")
+AT2 <- subset(merged_new, idents = "AT2")
+Myofibroblasts <- subset(merged_new, idents = "Myofibroblasts")
+Fibroblasts <- subset(merged_new, idents = "Fibroblasts")
+Idents(AT1) <- AT1$Type
+Idents(AT2) <- AT2$Type
+Idents(Myofibroblasts) <- Myofibroblasts$Type
+Idents(Fibroblasts) <- Fibroblasts$Type
+```
+
+```{r}
+AT1 <- PrepSCTFindMarkers(AT1, assay = "SCT", verbose = T)
+AT2 <- PrepSCTFindMarkers(AT2, assay = "SCT", verbose = T)
+Myofibroblasts <- PrepSCTFindMarkers(Myofibroblasts, assay = "SCT", verbose = T)
+Fibroblasts <- PrepSCTFindMarkers(Fibroblasts, assay = "SCT", verbose = T)
+```
+
+### Differential expression to make dot plots of 50 top differentially expressed genes for each cell type
+```{r}
+deg_at1 <- FindMarkers(AT1, ident.1 = "Treatment", ident.2 = "Ctrl", 
+                       assay = "SCT", only.pos = FALSE)
+deg_at2 <- FindMarkers(AT2, ident.1 = "Treatment", ident.2 = "Ctrl", 
+                       assay = "SCT", only.pos = FALSE)
+deg_Myofibroblasts <- FindMarkers(Myofibroblasts, ident.1 = "Treatment", ident.2 = "Ctrl", 
+                       assay = "SCT", only.pos = FALSE)
+deg_Fibroblasts <- FindMarkers(Fibroblasts, ident.1 = "Treatment", ident.2 = "Ctrl", 
+                       assay = "SCT", only.pos = FALSE)
+```
+
+
+```{r}
+AT1_top50 <- c("SFTPA1", "FOS", "CLDN5", "EGR1", "CCN2", "CCN1", "APOD", "FOSB", "PGC", "S100A9", "SMAD6", "DCN", "TMEM100", "NPC2", "SPARCL1", "LUM", "OTULINL", "EPAS1", "ABCA1", "SFTPC", "THBD", "DEPP1", "SLC6A4", "IGKC", "VIPR1", "S100A8", "LTBP2", "PIGR", "LYZ", "ANOS1", "CEACAM6", "AGER", "COL3A1", "MCAM", "IFI30", "HHIP", "WFS1", "PECAM1", "ZFP36", "S100A4", "ITGA6", "HPGD", "PGF","SOX9","KRT8", "GDF15", "CLDN4", "VIM", "IGFBP3","PDPN")
+
+AT2_top50 <- c("SFTPA1", "PGC", "FOS", "DCN", "CLDN5", "EGR1", "CCN1", "FOSB", "CCN2", "APOD", "HHIP", "NPC2", "ZFP36", "S100A9", "JUN", "PLA2G4F", "PIGR", "LUM", "SMAD6", "SPARCL1", "DEPP1", "DUSP1", "OTULINL", "RNASE1", "IER2", "MSLN", "JUNB", "MID1IP1", "C4BPA", "CSF3R", "TMEM100", "CEACAM6", "SPRY4", "POSTN", "SESTD1", "SLC6A4", "WIF1", "THBD", "VIPR1", "DMBT1", "ACOXL","SOX9", "SFTPC", "KRT8", "GDF15", "CLDN4", "VIM", "IGFBP3", "AGER", "PDPN")
+
+Myofibroblasts_top50 <- c("APOD", "FOS", "DES", "EGR1", "CCN1", "LUM", "SFTPA1", "CCN2", "DEPP1", "FN1", "SFTPC", "PPP1R14A", "SMAD6", "ACTA2", "LTBP2", "SLC38A2", "FOSB", "PRELP", "NKD2", "IGKC", "TMEM100", "THBD", "EPAS1", "CLDN5", "LIMS2", "PODN", "THBS1", "AQP1", "PGC", "VIPR1", "S100A9", "PDLIM7", "ADARB1", "TCEAL4", "SFTPB", "NEDD9", "EFEMP1", "CFH", "SPI1", "ADAMTS2", "GPSM1", "SLC6A4","SOX9","KRT8", "GDF15", "CLDN4", "VIM", "IGFBP3", "AGER", "PDPN")
+
+Fibroblasts_top50 <- c("SFTPA1", "SFTPC", "LUM", "FOS", "APOD", "CCN1", "EGR1", "CCN2", "DEPP1", "FOSB", "CLDN5", "SMAD6", "SFTPB", "PGC", "POSTN", "NKD2", "LTBP2", "PODN", "TAGLN", "S100A9", "IGFBP7", "THBS1", "SPARCL1", "SERPINF1", "TMEM100", "CFH", "SLC34A2", "ACTA2", "SLC6A4", "THBD", "ZFP36", "JUNB", "SLC38A2", "PIGR", "IGKC", "SERPING1", "DCN", "COL18A1", "NPC2", "THBS2", "IFI30", "HMOX1","SOX9","KRT8", "GDF15", "CLDN4", "VIM", "IGFBP3", "AGER", "PDPN")
+```
+
+```{r}
+DotPlot(Fibroblasts, features = Fibroblasts_top50, group.by = "Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Top 50 DE Genes in Fibroblasts Cells (Treatment vs Control)") + theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
+```
+
+### New SpatialDimPlots
+```{r}
+Ctrl_subset <- subset(Ctrl, idents = c("AT1", "AT2", "Fibroblasts", "Myofibroblasts" ))
+Day_3_subset <- subset(Day_3, idents = c("AT1", "AT2", "Fibroblasts", "Myofibroblasts" ))
+```
+
+```{r}
+SpatialDimPlot(Ctrl_subset, label = F, repel = T, label.size = 4, image.scale = "lowres", facet.highlight = T, group.by = "predicted.ann_level_3")  & guides(fill = guide_legend(override.aes = list(size=2)))
+```
+
