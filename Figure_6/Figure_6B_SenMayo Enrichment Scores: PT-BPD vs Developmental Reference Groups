@@ -1,0 +1,16 @@
+Panel C-SenMayo Enrichment Scores: PT-BPD vs Developmental Reference Groups
+
+SenMayo enrichment scores were calculated using Gene Set Enrichment Analysis (GSEA) to assess senescence-associated transcriptional programs in PT-BPD (alveolar deficiency).
+
+Workflow:
+
+Gene expression signatures were obtained from the integrated pediatric lung snRNA-seq dataset.
+SenMayo gene signatures were analyzed using GSEA.
+Normalized enrichment scores (NES) were calculated for each cell population.
+PT-BPD samples were compared with developmental reference groups.
+Results were visualized using GraphPad Prism.
+
+Software:
+
+GSEA (Broad Institute)
+GraphPad Prism
