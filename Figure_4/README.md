@@ -43,12 +43,13 @@ Analyses were performed using the integrated Harmony-corrected and Azimuth-annot
 
 ## Analysis Workflow
 
-- Gene-set enrichment/scoring analysis
-- Aggregate expression analysis
-- Feature plot visualization
-- Heatmap generation
-- DAVID/PANTHER pathway annotation
-- Figure assembly and schematic summarization
+- Gene Set Enrichment Analysis (GSEA) for developmental activation scoring (Panel A)
+- Extraction and visualization of scaled gene expression values (Panel B)
+- Aggregate expression analysis (Panel E)
+- Feature plot visualization (Panel F)
+- Heatmap generation (Panels D, G, H, J)
+- DAVID/PANTHER functional annotation and pathway enrichment analysis (Panel K)
+- Figure assembly and schematic visualization
 
 ## Output
 
