@@ -1,5 +1,5 @@
 ---
-title: "sENMAYO AND FRIEDMAN SCORING 5A"
+title: "SENMAYO AND FRIEDMAN SCORING 5A"
 output: html_document
 date: "2026-05-26"
 ---
