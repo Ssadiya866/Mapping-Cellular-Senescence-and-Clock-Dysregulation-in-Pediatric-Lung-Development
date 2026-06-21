@@ -29,3 +29,13 @@ Pathway enrichment and gene-pathway relationship analysis of plasticity-associat
 
 ### Panel H
 Proposed model of AT2-to-DATP-to-AT1 transitional plasticity and its association with non-canonical senescence programs.
+
+## Analysis Workflow
+
+- SenMayo gene signatures were evaluated using Gene Set Enrichment Analysis (GSEA).
+- Plasticity-associated genes were curated from He et al.
+- Scaled expression analyses were performed in R using the integrated pediatric lung snRNA-seq dataset.
+- Gene Ontology enrichment analyses were performed using DAVID and PANTHER.
+- Statistical visualizations were generated using GraphPad Prism.
+- Heatmaps were generated in R.
+- Conceptual schematics were assembled using BioRender and PowerPoint.
