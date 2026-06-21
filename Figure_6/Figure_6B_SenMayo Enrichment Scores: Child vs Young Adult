@@ -1,0 +1,15 @@
+Panel B-SenMayo Enrichment Scores: Child vs Young Adult
+
+SenMayo enrichment scores were calculated using Gene Set Enrichment Analysis (GSEA) to evaluate senescence-associated transcriptional programs across major lung cell populations.
+
+Workflow:
+
+Gene expression signatures were obtained from the integrated pediatric lung snRNA-seq dataset.
+SenMayo gene signatures were analyzed using GSEA.
+Normalized enrichment scores (NES) were calculated for each cell population.
+Child and Young Adult groups were compared.
+Results were visualized using GraphPad Prism.
+
+Software:
+
+GSEA (Broad Institut
