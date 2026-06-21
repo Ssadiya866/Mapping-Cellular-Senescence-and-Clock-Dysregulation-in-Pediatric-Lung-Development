@@ -1,0 +1,162 @@
+title: "Figure 1E Epithelial Pseudotime"
+output: html_document
+date: "2026-06-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(Seurat)
+library(SeuratWrappers)
+library(monocle3)
+library(dplyr)
+library(ggplot2)
+library(igraph)
+
+# Integrated Harmony-corrected and Azimuth-annotated Seurat object
+lungQuery <- readRDS("path_to_object/lungQuery_After_Az_Normalized.rds")
+DefaultAssay(lungQuery) <- "RNA"
+
+outdir <- "Figure1E_Epithelial_Pseudotime_Output"
+dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+
+# Define developmental stage used for Figure 1E
+lungQuery$Stage <- dplyr::case_when(
+  lungQuery$Donor_Group %in% c("PT_NEWBORN", "PT-NEWBORN", "PT_NB") ~ "Saccular",
+  lungQuery$Donor_Group %in% c("FT_NEWBORN", "FT-NEWBORN", "FT_NB") ~ "Alveolar",
+  TRUE ~ NA_character_
+)
+
+lungQuery$Stage <- factor(lungQuery$Stage, levels = c("Saccular", "Alveolar"))
+
+epithelial_types <- c(
+  "AT2",
+  "AT2 proliferating",
+  "AT1",
+  "Transitional Club-AT2"
+)
+
+epi_dev <- subset(
+  lungQuery,
+  subset = Stage %in% c("Saccular", "Alveolar") &
+    predicted.ann_finest_level %in% epithelial_types
+)
+
+epi_dev$predicted.ann_finest_level <- factor(
+  epi_dev$predicted.ann_finest_level,
+  levels = epithelial_types
+)
+
+table(epi_dev$Stage)
+table(epi_dev$predicted.ann_finest_level)
+
+get_root_AT2 <- function(cds, root_cell_type = "AT2") {
+  
+  cell_ids <- colnames(cds)[
+    colData(cds)$predicted.ann_finest_level == root_cell_type
+  ]
+  
+  closest_vertex <- cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex)
+  closest_vertex <- closest_vertex[colnames(cds), , drop = FALSE]
+  
+  root_vertex <- names(which.max(table(closest_vertex[cell_ids, 1])))
+  
+  root_pr_node <- igraph::V(principal_graph(cds)[["UMAP"]])$name[
+    as.numeric(root_vertex)
+  ]
+  
+  return(root_pr_node)
+}
+
+run_epi_pseudotime <- function(seurat_obj, stage_name) {
+  
+  obj_stage <- subset(seurat_obj, subset = Stage == stage_name)
+  Idents(obj_stage) <- "predicted.ann_finest_level"
+  
+  cds_stage <- as.cell_data_set(obj_stage)
+  
+  rowData(cds_stage)$gene_name <- rownames(cds_stage)
+  rowData(cds_stage)$gene_short_name <- rownames(cds_stage)
+  
+  cds_stage@int_colData@listData$reducedDims$UMAP <-
+    obj_stage@reductions$umap@cell.embeddings
+  
+  cds_stage <- cluster_cells(cds_stage, reduction_method = "UMAP")
+  
+  recreate.partition <- c(rep(1, ncol(cds_stage)))
+  names(recreate.partition) <- colnames(cds_stage)
+  cds_stage@clusters$UMAP$partitions <- as.factor(recreate.partition)
+  
+  cds_stage <- learn_graph(
+    cds_stage,
+    use_partition = FALSE,
+    close_loop = FALSE
+  )
+  
+  root_node <- get_root_AT2(
+    cds_stage,
+    root_cell_type = "AT2"
+  )
+  
+  cds_stage <- order_cells(
+    cds_stage,
+    reduction_method = "UMAP",
+    root_pr_nodes = root_node
+  )
+  
+  colData(cds_stage)$monocle3_pseudotime <- pseudotime(cds_stage)
+  
+  p <- plot_cells(
+    cds_stage,
+    color_cells_by = "pseudotime",
+    label_cell_groups = FALSE,
+    label_groups_by_cluster = FALSE,
+    label_leaves = FALSE,
+    label_branch_points = FALSE,
+    label_roots = FALSE
+  ) +
+    ggtitle(paste(stage_name, "epithelial pseudotime")) +
+    theme_classic(base_size = 14)
+  
+  return(list(cds = cds_stage, plot = p))
+}
+
+saccular_epi <- run_epi_pseudotime(epi_dev, "Saccular")
+alveolar_epi <- run_epi_pseudotime(epi_dev, "Alveolar")
+
+p_saccular_epi <- saccular_epi$plot
+p_alveolar_epi <- alveolar_epi$plot
+
+p_saccular_epi
+p_alveolar_epi
+
+ggsave(
+  file.path(outdir, "Saccular_Epithelial_Pseudotime.png"),
+  p_saccular_epi,
+  width = 7,
+  height = 6,
+  dpi = 300,
+  bg = "white"
+)
+
+ggsave(
+  file.path(outdir, "Alveolar_Epithelial_Pseudotime.png"),
+  p_alveolar_epi,
+  width = 7,
+  height = 6,
+  dpi = 300,
+  bg = "white"
+)
+
+write.csv(
+  as.data.frame(colData(saccular_epi$cds)),
+  file.path(outdir, "Saccular_Epithelial_Pseudotime_Metadata.csv"),
+  row.names = TRUE
+)
+
+write.csv(
+  as.data.frame(colData(alveolar_epi$cds)),
+  file.path(outdir, "Alveolar_Epithelial_Pseudotime_Metadata.csv"),
+  row.names = TRUE
+)
