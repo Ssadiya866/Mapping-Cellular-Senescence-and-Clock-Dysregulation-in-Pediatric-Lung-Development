@@ -1,2 +1,106 @@
-Figure 7. Cellular plasticity programs across lung development and BPD.
-This folder contains scripts used to generate cellular plasticity scores, gene expression analyses, heatmaps, pathway enrichment analyses, and transitional AT2–AT1 state characterization across developmental stages and BPD.
+Figure 7-Spatial Validation of Senescence-Associated Niches
+
+This folder contains workflows and analyses used to generate Figure 7.
+
+## Figure 7A
+### Phenocycler-Fusion Workflow Schematic
+
+Illustration of the multiplex spatial imaging workflow used for characterization of senescence-associated niches in pediatric lung tissue.
+
+Workflow:
+- Selection of pediatric control and BPD lung samples.
+- Multiplex antibody panel design.
+- Phenocycler-Fusion imaging.
+- Cell segmentation and image analysis.
+- Spatial validation of senescence-associated niches.
+
+Software:
+- Akoya Phenocycler-Fusion
+- Phenochart
+- Akoya Analysis Software
+
+## Figure 7B
+### Spatial Localization of GLB1-Associated Niches
+
+Representative Phenocycler-Fusion images showing localization of AGER, SCEL, and GLB1 within parenchymal and airway regions of control and BPD lung tissues.
+
+Software:
+- Akoya Phenocycler-Fusion
+- Phenochart
+- Akoya Analysis Software
+
+
+## Figure 7C
+### Quantification of GLB1+CD68+ Cells
+
+Quantification of GLB1-positive CD68-positive cells in control and BPD lung tissues.
+
+Workflow:
+- Marker-positive cells identified from multiplex imaging data.
+- Cell frequencies calculated across regions of interest.
+- Statistical visualization performed using GraphPad Prism.
+
+Software:
+- GraphPad Prism
+- Akoya Analysis Software
+
+## Figure 7D
+### Cell-Type Composition of GLB1+CD68+ Cells
+
+Cell-type composition analysis of GLB1-positive CD68-positive cells across control and BPD samples.
+
+Workflow:
+- Cell identities assigned using multiplex marker combinations.
+- Cell-type proportions calculated for each sample.
+- Results visualized as stacked bar plots.
+
+Software:
+- GraphPad Prism
+- Akoya Analysis Software
+
+## Figure 7E
+### High-Resolution Validation of Senescence Markers
+
+Representative Phenocycler-Fusion images showing expression of p21, Pan-Cytokeratin, CD31, HMGB1, Lamin B1, and Ki67 within alveolar senescence-associated niches.
+
+Software:
+- Akoya Phenocycler-Fusion
+- Phenochart
+- Akoya Analysis Software
+
+
+## Figure 7F
+### Cell-Type Composition of p21+ Cells
+
+Cell-type composition analysis of p21-positive cells across experimental groups.
+
+Workflow:
+- p21-positive cells identified from multiplex imaging data.
+- Cell populations classified using marker combinations.
+- Proportions summarized across developmental and disease groups.
+- Results visualized using GraphPad Prism.
+
+Software:
+- GraphPad Prism
+- Akoya Analysis Software
+
+
+## Figure 7G
+### Proposed Model of Persistent Senescence-Associated Niches
+
+Conceptual model summarizing the proposed role of transient senescence-associated epithelial niches during normal alveolar development and their persistence in BPD.
+
+
+## Analysis Workflow
+
+- Multiplex spatial imaging was performed using the Akoya Phenocycler-Fusion platform.
+- Senescence-associated markers including GLB1, p21, HMGB1, Lamin B1, AGER, SCEL, CD68, Pan-Cytokeratin, CD31, and Ki67 were evaluated.
+- Cell-type composition and marker quantification analyses were performed using spatial imaging data.
+- Statistical visualizations were generated using GraphPad Prism.
+
+## Software
+
+- Akoya Phenocycler-Fusion
+- Phenochart
+- Akoya Analysis Software
+- GraphPad Prism
