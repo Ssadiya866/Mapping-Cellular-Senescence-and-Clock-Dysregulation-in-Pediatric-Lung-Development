@@ -1,0 +1,180 @@
+---
+title: "Untitled"
+output: html_document
+date: "2026-06-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+llibrary(Seurat)
+library(dplyr)
+library(ggplot2)
+library(grid)
+
+genes_plot <- c("CCN1", "FGF7", "GDF15")
+
+groups_use <- c("PT_NEWBORN", "FT_NEWBORN", "PT_BPD")
+
+celltypes_use <- c(
+  "AT2",
+  "Fibroblasts",
+  "Myofibroblasts",
+  "Smooth Muscle",
+  "Trans-AT2"
+)
+
+meta <- obj@meta.data
+meta$CellType_Plot <- meta$predicted.ann_finest_level
+
+meta$CellType_Plot <- recode(
+  meta$CellType_Plot,
+  "AT2" = "AT2",
+  "Alveolar fibroblasts" = "Fibroblasts",
+  "Myofibroblasts" = "Myofibroblasts",
+  "Smooth muscle" = "Smooth Muscle",
+  "Transitional Club-AT2" = "Trans-AT2"
+)
+
+expr_mat <- GetAssayData(
+  obj,
+  assay = "RNA",
+  layer = "data"
+)
+
+cells_keep <- rownames(meta)[
+  meta$Donor_Group %in% groups_use &
+    meta$CellType_Plot %in% celltypes_use
+]
+
+meta_sub <- meta[cells_keep, ]
+
+all_results <- list()
+
+for (gene in genes_plot) {
+  
+  df <- meta_sub
+  df$Gene <- gene
+  df$Expression <- as.numeric(expr_mat[gene, rownames(df)])
+  df$Positive <- df$Expression > 0
+  
+  donor_avg <- df %>%
+    group_by(Gene, Donor_Group, Donor, CellType_Plot) %>%
+    summarise(
+      Total_Cells = n(),
+      Positive_Cells = sum(Positive),
+      Fraction_Positive = Positive_Cells / Total_Cells,
+      .groups = "drop"
+    ) %>%
+    group_by(Gene, Donor_Group, CellType_Plot) %>%
+    summarise(
+      Mean_Fraction_Positive = mean(Fraction_Positive),
+      .groups = "drop"
+    )
+  
+  all_results[[gene]] <- donor_avg
+}
+
+plot_data <- bind_rows(all_results)
+
+plot_data$Donor_Group <- factor(
+  plot_data$Donor_Group,
+  levels = groups_use,
+  labels = c("PT-NB", "FT-NB", "BPD")
+)
+
+plot_data$CellType_Plot <- factor(
+  plot_data$CellType_Plot,
+  levels = celltypes_use
+)
+
+celltype_colors <- c(
+  "AT2" = "#4B2E83",
+  "Fibroblasts" = "#1F6AE5",
+  "Myofibroblasts" = "#0F8797",
+  "Smooth Muscle" = "#FF6A00",
+  "Trans-AT2" = "#FF3300"
+)
+
+write.csv(
+  plot_data,
+  "CCN1_FGF7_GDF15_DonorAveraged_CellFraction_SourceData.csv",
+  row.names = FALSE
+)
+
+p <- ggplot(
+  plot_data,
+  aes(
+    x = Donor_Group,
+    y = Mean_Fraction_Positive,
+    fill = CellType_Plot
+  )
+) +
+  geom_bar(
+    stat = "identity",
+    width = 0.65,
+    color = "#F2CFCF",
+    linewidth = 1
+  ) +
+  facet_wrap(~Gene, nrow = 1) +
+  scale_fill_manual(values = celltype_colors, drop = FALSE) +
+  labs(
+    x = NULL,
+    y = "Cell Proportion",
+    fill = NULL
+  ) +
+  theme_classic(base_size = 16) +
+  theme(
+    strip.text = element_text(
+      face = "bold",
+      size = 18,
+      color = "#005B8E"
+    ),
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      face = "bold",
+      size = 14
+    ),
+    axis.text.y = element_text(
+      face = "bold",
+      size = 13
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      size = 16
+    ),
+    legend.position = "bottom",
+    legend.text = element_text(
+      size = 18,
+      face = "bold"
+    ),
+    legend.title = element_blank()
+  ) +
+  guides(
+    fill = guide_legend(
+      nrow = 1,
+      byrow = TRUE,
+      keywidth = unit(1.2, "cm"),
+      keyheight = unit(0.8, "cm")
+    )
+  )
+
+print(p)
+
+ggsave(
+  "CCN1_FGF7_GDF15_DonorAveraged_StackedBars.pdf",
+  p,
+  width = 10,
+  height = 5.5
+)
+
+ggsave(
+  "CCN1_FGF7_GDF15_DonorAveraged_StackedBars.png",
+  p,
+  width = 10,
+  height = 5.5,
+  dpi = 300
+)
