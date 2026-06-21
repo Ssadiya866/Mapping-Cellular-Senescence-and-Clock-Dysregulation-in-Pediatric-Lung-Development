@@ -24,6 +24,14 @@ Input gene lists were derived from shared and unique gene signatures identified 
 - Adjusted p-values/enrichment values were plotted in GraphPad Prism for Panels A–B.
 - Pathway–gene relationships were visualized in R using `circlize`.
 
+## Software and Resources
+- DAVID Functional Annotation Tool: https://david.ncifcrf.gov/
+- PANTHER Classification System: https://pantherdb.org/
+- GraphPad Prism 11: https://www.graphpad.com/
+- R Statistical Computing Environment: https://www.r-project.org/
+- R (version 4.5.1)
+- RStudio
+
 ## Output
 
 Scripts and source files in this folder generate the panels corresponding to Figure 3.
