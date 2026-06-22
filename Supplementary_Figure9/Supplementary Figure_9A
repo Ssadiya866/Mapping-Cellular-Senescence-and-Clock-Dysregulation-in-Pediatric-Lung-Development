@@ -1,0 +1,96 @@
+
+Supplementary Figure_9A
+```{r, fig.width = 12,fig.height  =12}
+
+ratio_data = readxl::read_xlsx("Y:\\Senescence_paper\\tentative_metadata\\tentative_metadata\\positive_ratio_table.xlsx")
+
+library(pheatmap)
+
+
+pkgs <- as.data.frame(installed.packages()[, c("Package", "Version")])
+print(pkgs)
+
+
+ratio_data_filtered = ratio_data %>% select(-MFAP5_GDF15, -MFAP5_GLB1, -MFAP5_P16, -MFAP5_P21, -MFAP5)
+
+
+
+# 2. Extract the column to be used as row names
+#    It's good practice to store this separately first.
+row_labels <- ratio_data_filtered$cell_type
+
+# 3. Convert the numeric part of the dataframe to a matrix
+#    We use `select(-GeneID)` to exclude the GeneID column before converting.
+data_matrix_for_heatmap <- ratio_data_filtered %>%
+  select(-cell_type) %>% # Exclude the column you want to use as row names
+  as.matrix()         # Convert the remaining numeric data to a matrix
+
+# 4. Assign the extracted row labels to the matrix
+rownames(data_matrix_for_heatmap) <- row_labels
+
+# Now, data_matrix_for_heatmap is ready for pheatmap
+print(head(data_matrix_for_heatmap)) # Check the matrix with its new row names
+
+
+############################################################################################################################
+#
+# scaled by row
+#
+############################################################################################################################
+
+#png("Y:\\Senescence_paper\\pt_ft_ratio_comparison_no_mfap5_scaled_by_celltype_row_with_numbers.png", width = 20, height = 10
+ #   , units = "in", res = 300)
+
+# 5. Generate the heatmap
+pheatmap(
+  data_matrix_for_heatmap,
+  scale = "row", # Still scaling rows as per your previous request
+  main = "",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_rownames = TRUE,
+  show_colnames = TRUE,
+  fontsize_row = 20, # Increase row name font size
+  fontsize_col = 20, # This will increase the font size of the legend text # Increase column name font size
+  fontsize_legend = 20,
+  display_numbers = TRUE,
+  number_format = "%.2f", # Format to one decimal place
+  fontsize_number = 22
+)
+
+#dev.off()
+
+
+############################################################################################################################
+#
+# scaled by column
+#
+############################################################################################################################
+
+#png("Y:\\Senescence_paper\\pt_ft_ratio_comparison_no_mfap5_scaled_by_marker_column_with_numbers.png", width = 20, height = 10, units = "in", res = 300)
+
+# 5. Generate the heatmap
+pheatmap(
+  data_matrix_for_heatmap,
+  scale = "column", # Still scaling rows as per your previous request
+  main = "",
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  show_rownames = TRUE,
+  show_colnames = TRUE,
+  fontsize_row = 20, # Increase row name font size
+  fontsize_col = 20, # This will increase the font size of the legend text # Increase column name font size
+  fontsize_legend = 20 ,
+  display_numbers = TRUE,
+  number_format = "%.2f", # Format to one decimal place 
+  fontsize_number = 22
+)
+
+#dev.off()
+
+
+
+pkgs <- as.data.frame(installed.packages()[, c("Package", "Version")])
+print(pkgs)
+write.csv(pkgs, file = "Y:\\Senescence_paper\\r_package_versions.csv")
+```
