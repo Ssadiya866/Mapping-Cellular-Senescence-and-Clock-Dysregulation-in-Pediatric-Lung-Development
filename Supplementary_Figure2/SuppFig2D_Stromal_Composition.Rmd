@@ -1,5 +1,5 @@
 ---
-title: "Stromal Lineage Cell Proportion Plot"
+title: "SuppFig2D_Stromal_Composition"
 output: html_document
 date: "2026-05-16"
 ---
