@@ -1,105 +1,148 @@
 ---
-title: "SuppFig4A_Immune_Subclusters"
+title: "Immune Cell Lineage Analysis"
 output: html_document
-date: "2026-05-16"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
+```{r setup, message=FALSE, warning=FALSE}
 library(Seurat)
-library(tidyverse)
+library(dplyr)
 library(ggplot2)
-library(gridExtra)
+library(patchwork)
 ```
 
-```{r}
-getwd()
+## Load integrated Seurat object
+
+```{r load-object}
+obj <- readRDS("lungQuery_After_AZ_Normalized.rds")
 ```
 
-```{r immune_lineage_barplot, echo=TRUE, warning=FALSE, message=FALSE}
-dir.create("Plots_Barplot", showWarnings = FALSE)
+## Subset immune cells
 
-meta_level1 <- readRDS("C:/Users/Sshaikh9/Documents/meta_level1.rds")
+```{r subset-immune}
+immune <- subset(obj, subset = Level1 == "Immune")
 
-immune_celltypes <- c(
-  "Alveolar macrophages",
-  "B cells",
-  "CD4 T cells",
-  "CD8 T cells",
-  "Classical monocytes",
-  "Interstitial Mφ perivascular",
-  "Mast cells",
-  "Monocyte-derived Mφ",
-  "NK cells",
-  "Non-classical monocytes",
-  "Plasma cells",
-  "Plasmacytoid DCs",
-  "T cells proliferating"
-)
+immune
+```
 
-prop_immune <- meta_level1 %>%
-  dplyr::count(Donor_Group, predicted.ann_finest_level) %>%
-  dplyr::filter(
-    Donor_Group != "Aged_or_Diseased",
-    Donor_Group != "NA",
-    predicted.ann_finest_level %in% immune_celltypes
-  ) %>%
-  dplyr::group_by(Donor_Group) %>%
-  dplyr::mutate(percent = 100 * n / sum(n)) %>%
-  dplyr::ungroup()
+## Immune UMAP by finest-level subtype
 
-prop_immune$Donor_Group <- factor(
-  prop_immune$Donor_Group,
-  levels = c(
-    "PT_NEWBORN",
-    "FT_NEWBORN",
-    "INFANT",
-    "Children",
-    "Adolescent",
-    "Young_Adult",
-    "PT_BPD"
-  )
-)
-
-p_immune_bar <- ggplot(
-  prop_immune,
-  aes(
-    x = Donor_Group,
-    y = percent,
-    fill = predicted.ann_finest_level
-  )
+```{r immune-umap-finest, fig.width=9, fig.height=7}
+DimPlot(
+  immune,
+  reduction = "umap",
+  group.by = "new_celltype",
+  label = TRUE,
+  repel = TRUE
 ) +
-  geom_col(color = "black", linewidth = 0.3) +
-  theme_bw() +
-  labs(
-    title = "Immune Cell Lineage Proportions",
-    x = "",
-    y = "Proportion",
-    fill = "Immune Lineage"
-  ) +
-  theme(
-    axis.text.x = element_text(size = 11, face = "bold", angle = 90, hjust = 1),
-    axis.text.y = element_text(size = 10),
-    axis.title.y = element_text(size = 13, face = "bold"),
-    legend.text = element_text(size = 9),
-    legend.title = element_text(size = 11, face = "bold"),
-    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
-  )
-
-ggsave(
-  filename = "Plots_Barplot/Immune_Lineage_Cell_Proportions.png",
-  plot = p_immune_bar,
-  width = 11,
-  height = 7,
-  dpi = 300
-)
-
-print(p_immune_bar)
-
-knitr::include_graphics("Plots_Barplot/Immune_Lineage_Cell_Proportions.png")
-
+  ggtitle("Immune Cell Lineage Subtypes")
 ```
 
+## Immune UMAP by developmental / disease group
+
+```{r immune-umap-group, fig.width=9, fig.height=7}
+DimPlot(
+  immune,
+  reduction = "umap",
+  group.by = "Donor_Group"
+) +
+  ggtitle("Immune Cells Across Developmental and Disease Groups")
+```
+
+## Canonical immune lineage markers
+
+```{r immune-featureplots, fig.width=12, fig.height=10}
+FeaturePlot(
+  immune,
+  features = c(
+    "PTPRC", "CD3D", "CD3E", "CD4",
+    "CD8A", "MS4A1", "CD68", "LYZ",
+    "LST1", "FCGR3A", "NKG7", "GNLY"
+  ),
+  reduction = "umap",
+  ncol = 4
+)
+```
+
+## Dot plot of immune markers by finest-level subtype
+
+```{r immune-dotplot, fig.width=12, fig.height=7}
+immune_markers <- c(
+  "PTPRC",
+  "CD3D", "CD3E", "CD4", "CD8A",
+  "MS4A1", "CD79A",
+  "CD68", "LYZ", "LST1", "FCGR3A",
+  "NKG7", "GNLY",
+  "MKI67"
+)
+
+DotPlot(
+  immune,
+  features = immune_markers,
+  group.by = "new_celltype"
+) +
+  RotatedAxis() +
+  ggtitle("Immune Lineage Marker Expression by Finest-Level Cell Type")
+```
+
+## Immune subtype cell counts
+
+```{r immune-counts}
+immune_counts <- immune@meta.data %>%
+  count(Donor_Group, new_celltype) %>%
+  arrange(Donor_Group, desc(n))
+
+immune_counts
+```
+
+## Immune subtype proportions by group
+
+```{r immune-proportions}
+immune_prop <- immune@meta.data %>%
+  count(Donor_Group, new_celltype) %>%
+  group_by(Donor_Group) %>%
+  mutate(Proportion = n / sum(n)) %>%
+  ungroup()
+
+immune_prop
+```
+
+```{r immune-proportion-plot, fig.width=11, fig.height=6}
+ggplot(
+  immune_prop,
+  aes(x = Donor_Group, y = Proportion, fill = new_celltype)
+) +
+  geom_bar(stat = "identity", position = "fill") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Proportion of immune cells") +
+  xlab("Developmental / disease group") +
+  ggtitle("Immune Cell Lineage Composition Across Groups")
+```
+
+## Optional: save immune lineage outputs
+
+```{r save-outputs}
+write.csv(
+  immune@meta.data,
+  "Immune_Cell_Metadata_Finest_Level.csv",
+  row.names = TRUE
+)
+
+write.csv(
+  immune_counts,
+  "Immune_Cell_Counts_Finest_Level.csv",
+  row.names = FALSE
+)
+
+write.csv(
+  immune_prop,
+  "Immune_Cell_Proportions_Finest_Level.csv",
+  row.names = FALSE
+)
+```
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```
