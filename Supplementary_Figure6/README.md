@@ -62,5 +62,5 @@ Association analysis between stromal genes and enriched biological pathways.
 ## Files
 
 - SuppFig6A_Heatmap.Rmd
-- SuppFig6B_Epithelial_Sankey.Rmd
-- SuppFig6C_Stromal_Sankey.Rmd
+- SuppFig6B_EpithelialStromal_Sankey.Rmd
+
