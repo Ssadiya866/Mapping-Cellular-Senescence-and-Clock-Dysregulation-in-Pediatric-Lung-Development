@@ -1,0 +1,176 @@
+---
+title: "Figure 9B and 9C Sankey"
+output:
+  html_document:
+    self_contained: true
+    toc: false
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(readxl)
+library(dplyr)
+library(networkD3)
+library(htmlwidgets)
+
+excel_file <- file.choose()
+excel_sheets(excel_file)
+```
+
+# Figure 9B Sankey
+
+```{r figure-9b}
+
+df9b <- df9b %>%
+  rename(
+    source = Gene,
+    target = Pathway,
+    value = Flow_Value
+  ) %>%
+  mutate(
+    source = as.character(source),
+    target = as.character(target),
+    value = as.numeric(value),
+    LinkGroup = target
+  )
+
+nodes9b <- data.frame(
+  name = unique(c(df9b$source, df9b$target)),
+  stringsAsFactors = FALSE
+)
+
+links9b <- df9b %>%
+  mutate(
+    IDsource = match(source, nodes9b$name) - 1,
+    IDtarget = match(target, nodes9b$name) - 1
+  )
+
+color9b <- '
+d3.scaleOrdinal()
+.range([
+"#f8766d",
+"#00bfc4",
+"#7cae00",
+"#c77cff",
+"#ff9f40",
+"#e6ab02",
+"#4daf4a",
+"#a6cee3",
+"#b2df8a",
+"#fb9a99"
+])
+'
+
+p9b <- sankeyNetwork(
+  Links = links9b,
+  Nodes = nodes9b,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value = "value",
+  NodeID = "name",
+  LinkGroup = "LinkGroup",
+  colourScale = color9b,
+  fontSize = 13,
+  nodeWidth = 30,
+  nodePadding = 15,
+  sinksRight = TRUE
+)
+
+p9b
+```
+
+# Figure 9C Sankey
+
+```{r}
+
+# manually create cross-connections
+df9c_cross <- tribble(
+  ~Gene, ~Pathway,
+  "RAB31",  "Growth Factor Signaling",
+  "RAB31",  "Endocytosis",
+  "RAB31",  "MAPK/JAK-STAT",
+
+  "COL1A2", "ECM Organization",
+  "COL1A2", "Cell Adhesion",
+  "COL1A2", "Cellular Senescence",
+
+  "SPARC",  "ECM Organization",
+  "SPARC",  "Cell Adhesion",
+  "SPARC",  "Metabolic Pathways",
+
+  "FN1",    "Cell Adhesion",
+  "FN1",    "ECM Organization",
+
+  "CD44",   "Cell Adhesion",
+  "CD44",   "Endocytosis",
+  "CD44",   "Cellular Senescence",
+
+  "AOPEP",  "Metabolic Pathways",
+  "AOPEP",  "ECM Organization",
+
+  "IGFBP7", "Cellular Senescence",
+  "IGFBP7", "Growth Factor Signaling",
+  "IGFBP7", "ECM Organization",
+
+  "SMURF2", "MAPK/JAK-STAT",
+  "SMURF2", "Growth Factor Signaling",
+  "SMURF2", "Cellular Senescence"
+)
+
+links9c <- df9c_cross %>%
+  mutate(
+    source = Gene,
+    target = Pathway,
+    value = 1,
+    LinkGroup = Pathway
+  )
+
+nodes9c <- data.frame(
+  name = unique(c(links9c$source, links9c$target)),
+  stringsAsFactors = FALSE
+)
+
+links9c <- links9c %>%
+  mutate(
+    IDsource = match(source, nodes9c$name) - 1,
+    IDtarget = match(target, nodes9c$name) - 1
+  )
+
+color9c <- '
+d3.scaleOrdinal()
+.range([
+"#f8766d",
+"#00bfc4",
+"#7cae00",
+"#c77cff",
+"#ff9f40",
+"#e6ab02",
+"#4daf4a",
+"#a6cee3"
+])
+'
+
+p9c <- sankeyNetwork(
+  Links = links9c,
+  Nodes = nodes9c,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value = "value",
+  NodeID = "name",
+  LinkGroup = "LinkGroup",
+  colourScale = color9c,
+  fontSize = 13,
+  nodeWidth = 30,
+  nodePadding = 15,
+  sinksRight = TRUE
+)
+
+p9c
+```
+
+
+# Save HTML
+
+```{r save-html}
+saveWidget(p9b, "Figure_9B_Sankey.html", selfcontained = TRUE)
+saveWidget(p9c, "Figure_9C_Sankey.html", selfcontained = TRUE)
+```
