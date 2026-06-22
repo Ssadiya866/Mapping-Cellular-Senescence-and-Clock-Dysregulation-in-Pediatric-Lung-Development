@@ -1,0 +1,91 @@
+title: "SuppFig4E_CanonicalMarkerHeatmap"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(Seurat)
+library(ggplot2)
+```
+
+## Load Seurat Object
+
+```{r}
+lungQuery <- readRDS("lungQuery_After_AZ_Normalized.rds")
+```
+
+## Define Marker Genes
+
+```{r}
+heatmap_genes <- c(
+  "VEGFC","MDK","VEGFA","VEGFD",
+  "FGF1","FGF2","FGF7","FGF10","FGF18",
+  "IGF1","IGF2","IGF1R",
+  "NGF","NGFR","NGFRAP1","GDF15",
+  "PDGFRA","PDGFC","PDGFB","PDGFA",
+  "PDGFRL","PDGFD","PDGFRB",
+  "EGFR","EGF",
+  "TGFB1","TGFB2","TGFB3","TGFBR2",
+  "IGFBP5","IGFBP7"
+)
+
+heatmap_genes <- intersect(
+  heatmap_genes,
+  rownames(lungQuery)
+)
+```
+
+## Set Cell Identities
+
+```{r}
+Idents(lungQuery) <- lungQuery$predicted.ann_level_1
+```
+
+## Export Source Data
+
+```{r}
+expr_data <- FetchData(
+  lungQuery,
+  vars = heatmap_genes
+)
+
+expr_data$Lineage <- Idents(lungQuery)
+
+write.csv(
+  expr_data,
+  "Lineage_DoHeatmap_SourceData.csv",
+  row.names = TRUE
+)
+```
+
+## Generate Heatmap
+
+```{r fig.width=14, fig.height=10}
+p_heat <- DoHeatmap(
+  lungQuery,
+  features = heatmap_genes,
+  group.by = "predicted.ann_level_1",
+  size = 3,
+  raster = FALSE
+) +
+  ggtitle("Lineage Marker Heatmap")
+
+p_heat
+```
+
+## Save Figure
+
+```{r}
+ggsave(
+  filename = "Lineage_DoHeatmap.png",
+  plot = p_heat,
+  width = 14,
+  height = 10,
+  dpi = 300
+)
+```
+
+## Session Information
+
+```{r}
+sessionInfo()
+```
