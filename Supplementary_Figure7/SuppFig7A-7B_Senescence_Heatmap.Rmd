@@ -1,0 +1,144 @@
+---
+title: "fIGURE 5i gf"
+output: html_document
+date: "2026-05-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(Seurat)
+library(pheatmap)
+
+DefaultAssay(lungQuery) <- "RNA"
+
+# -----------------------------
+# Create developmental groups
+# -----------------------------
+lungQuery$Heatmap_Group <- NA
+
+lungQuery$Heatmap_Group[lungQuery$Donor %in% c("s126","s262")] <- "Canalicular"
+lungQuery$Heatmap_Group[lungQuery$Donor %in% c("s062")] <- "Early Saccular"
+lungQuery$Heatmap_Group[lungQuery$Donor %in% c("s229","s232","s088")] <- "Saccular"
+lungQuery$Heatmap_Group[lungQuery$Donor_Group == "FT_NEWBORN"] <- "Alveolar"
+lungQuery$Heatmap_Group[lungQuery$Donor_Group == "PT_BPD"] <- "PT_BPD"
+
+group_order <- c("Canalicular", "Early Saccular", "Saccular", "Alveolar", "PT_BPD")
+
+# ============================================================
+# 1. ALVEOLAR FIBROBLASTS: SENESCENCE MARKERS
+# ============================================================
+
+fib_genes <- c(
+  "CXCL8","TP53BP2","IL18R1","IL1A","CDKN2D","WRAP53",
+  "CDKN3","IL18RAP","TP53I3","GLB1L","CDKN1A","IL1B",
+  "CDKN2C","CDKN2B-AS1","CDKN2AIPNL","CDKN1C","CDKN1B",
+  "GLB1","CDKN2AIP","CDKN2A","CDKN2B","TP53","IL6ST"
+)
+
+fib_genes <- fib_genes[fib_genes %in% rownames(lungQuery)]
+
+fib_obj <- subset(
+  lungQuery,
+  subset = predicted.ann_finest_level == "Alveolar fibroblasts" &
+    !is.na(Heatmap_Group)
+)
+
+table(fib_obj$Heatmap_Group)
+
+avg_fib <- AverageExpression(
+  fib_obj,
+  features = fib_genes,
+  group.by = "Heatmap_Group",
+  assays = "RNA",
+  slot = "data"
+)$RNA
+
+colnames(avg_fib) <- gsub("PT-BPD", "PT_BPD", colnames(avg_fib))
+avg_fib <- avg_fib[, group_order, drop = FALSE]
+
+mat_fib <- t(scale(t(avg_fib)))
+mat_fib[is.na(mat_fib)] <- 0
+mat_fib[mat_fib > 2] <- 2
+mat_fib[mat_fib < -2] <- -2
+
+write.csv(avg_fib, "AlveolarFibroblasts_Senescence_AverageExpression.csv")
+write.csv(mat_fib, "AlveolarFibroblasts_Senescence_Zscore.csv")
+
+pheatmap(
+  mat_fib,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  color = colorRampPalette(c("blue","white","red"))(100),
+  breaks = seq(-2, 2, length.out = 101),
+  border_color = "black",
+  fontsize_row = 9,
+  fontsize_col = 10,
+  angle_col = 45,
+  main = "Alveolar fibroblasts: Senescence markers"
+)
+
+# ============================================================
+# 2. AT2 CELLS: JAK/STAT + WNT MARKERS
+# ============================================================
+
+at2_genes <- c(
+  "JAKMIP3","WNT8A","JAK3","STAT6","WNT7A","WNT9A",
+  "STAT2","WNT5B","WNT2","WNT10A","WNT11","WNT6",
+  "JAKMIP2-AS1","STATH","WNT4","JAKMIP2","WNT3A",
+  "JAKMIP1","WNT10B","WNT8B","WNT1","JAKMIP3-AS1",
+  "STAT1","WNT3","WNT5A-AS1","WNT9B","WNT2B",
+  "STAT4-AS1","WNT5A","JAK1","STAT5A","STAT5B",
+  "JAK2","WNT16","STAT3","STAT4","WNT7B"
+)
+
+at2_genes <- at2_genes[at2_genes %in% rownames(lungQuery)]
+
+at2_obj <- subset(
+  lungQuery,
+  subset = predicted.ann_finest_level == "AT2" &
+    !is.na(Heatmap_Group)
+)
+
+table(at2_obj$Heatmap_Group)
+
+avg_at2 <- AverageExpression(
+  at2_obj,
+  features = at2_genes,
+  group.by = "Heatmap_Group",
+  assays = "RNA",
+  slot = "data"
+)$RNA
+
+colnames(avg_at2) <- gsub("PT-BPD", "PT_BPD", colnames(avg_at2))
+avg_at2 <- avg_at2[, group_order, drop = FALSE]
+
+mat_at2 <- t(scale(t(avg_at2)))
+mat_at2[is.na(mat_at2)] <- 0
+mat_at2[mat_at2 > 2] <- 2
+mat_at2[mat_at2 < -2] <- -2
+
+write.csv(avg_at2, "AT2_JAK_STAT_WNT_AverageExpression.csv")
+write.csv(mat_at2, "AT2_JAK_STAT_WNT_Zscore.csv")
+
+pheatmap(
+  mat_at2,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  color = colorRampPalette(c("blue","white","red"))(100),
+  breaks = seq(-2, 2, length.out = 101),
+  border_color = "black",
+  fontsize_row = 8,
+  fontsize_col = 10,
+  angle_col = 45,
+  main = "AT2: JAK/STAT and WNT signaling genes"
+)
+```
+
+```{r}
+write.csv(avg_fib, "AlveolarFibroblasts_Senescence_AverageExpression.csv")
+write.csv(mat_fib, "AlveolarFibroblasts_Senescence_Zscore.csv")
+```
+
