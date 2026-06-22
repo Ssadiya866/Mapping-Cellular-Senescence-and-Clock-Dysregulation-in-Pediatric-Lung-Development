@@ -1,5 +1,5 @@
 ---
-title: "Epithelial Lineage Cell Proportion Plot"
+title: "SuppFig2C_Epithelial_Composition"
 output: html_document
 date: "2026-05-16"
 ---
