@@ -1,0 +1,17 @@
+## Supplementary Figure 8E-Developmental Plasticity and Senescence Scores
+
+Comparison of plasticity and senescence enrichment scores across developmental stages.
+
+### Workflow
+
+- Plasticity-associated gene signatures were adapted from He et al.
+- Senescence-associated gene signatures were compiled from established senescence markers.
+- Gene set enrichment scores were calculated for each developmental stage.
+- Scores were visualized to compare developmental plasticity and senescence dynamics.
+
+### Software
+
+- R
+- Seurat
+- GSVA
+- ggplot2
