@@ -79,7 +79,6 @@ Association analysis between plasticity-associated genes and enriched biological
 
 ## Files
 
-- SuppFig7A_Senescence_Heatmap.Rmd
-- SuppFig7B_Signaling_Heatmap.Rmd
+- SuppFig7A-7B_Senescence_Heatmap.Rmd
 - SuppFig7C_GO_Enrichment.Rmd
 - SuppFig7D_Plasticity_Sankey.Rmd
