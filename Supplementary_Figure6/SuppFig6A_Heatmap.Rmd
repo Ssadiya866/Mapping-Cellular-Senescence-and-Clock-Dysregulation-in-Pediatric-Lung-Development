@@ -1,5 +1,5 @@
 ---
-title: "Lineage Heatmap"
+title: "SuppFig6A_Heatmap"
 output: html_document
 date: "2026-05-18"
 ---
