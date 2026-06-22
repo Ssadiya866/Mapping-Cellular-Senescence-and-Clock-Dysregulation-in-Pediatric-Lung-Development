@@ -1,0 +1,120 @@
+---
+title: "GO and KEGG Enrichment Lollipop Plot"
+output: html_document
+date: "2026-05-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, message=FALSE, warning=FALSE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(forcats)
+```
+
+```{r}
+df <- read_excel(
+"Figure6G_GO_DAVID_style_source.xlsx",
+sheet = 1
+)
+
+# EXACT ORDER
+term_order <- c(
+"In utero embryonic development",
+"Cell Proliferation",
+"Gland development",
+"Insulin Receptor Binding",
+"Cytokine Binding",
+"Gland Morphogenesis",
+"Cell Surface Receptor Signaling",
+"Positive Regulation of Cell Migration",
+"Organ Morphogenesis",
+"Cell Periphery",
+"Cellular Senescence",
+"Growth Factor Binding",
+"Signaling by PDGF",
+"Diseases of signal transduction by growth factor receptors",
+"Fibroblast differentiation",
+"TGFβ ligand-receptor complex",
+"Receptor complex",
+"Signaling by Receptor Tyrosine Kinases",
+"MAPK Signaling",
+"Signal Transduction",
+"EGFR tyrosine kinase inhibitor resistance"
+)
+
+df$Term <- factor(
+df$Term,
+levels = rev(term_order)
+)
+
+# CATEGORY
+df$Group <- ifelse(
+grepl("KEGG", df$Category),
+"KEGG",
+"BP"
+)
+
+# NUMERIC
+df$Count <- as.numeric(df$Count)
+
+# PLOT
+ggplot(df,
+aes(
+x = -log10(PValue),
+y = Term
+)) +
+
+geom_segment(
+aes(
+x = 0,
+xend = -log10(PValue),
+y = Term,
+yend = Term,
+color = Group
+),
+linewidth = 3
+) +
+
+geom_point(
+aes(
+x = -log10(PValue),
+size = Count,
+fill = Group
+),
+shape = 21,
+color = "black",
+stroke = 0.5
+) +
+
+scale_color_manual(
+values = c(
+"BP" = "tomato",
+"KEGG" = "royalblue"
+)
+) +
+
+scale_fill_manual(
+values = c(
+"BP" = "tomato",
+"KEGG" = "royalblue"
+)
+) +
+
+scale_size(range = c(2,6)) +
+
+labs(
+x = "-log10(PValue)",
+y = NULL
+) +
+
+theme_classic(base_size = 11) +
+
+theme(
+legend.position = "right",
+axis.text.y = element_text(size = 8),
+axis.text.x = element_text(size = 9)
+)
