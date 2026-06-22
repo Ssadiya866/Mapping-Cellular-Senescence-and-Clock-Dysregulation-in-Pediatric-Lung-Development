@@ -1,0 +1,119 @@
+title: "SuppFig4B_Endothelial_Subclusters.Rmd"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+## Load integrated Seurat object
+
+```{r load-object}
+obj <- readRDS("lungQuery_After_AZ_Normalized.rds")
+```
+
+## Subset endothelial cells
+
+```{r subset-endothelial}
+endo <- subset(obj, subset = Level1 == "Endothelial")
+
+endo
+```
+
+## Endothelial UMAP by cell subtype
+
+```{r endothelial-umap-subtype, fig.width=8, fig.height=6}
+DimPlot(
+  endo,
+  reduction = "umap",
+  group.by = "new_celltype",
+  label = TRUE,
+  repel = TRUE
+) +
+  ggtitle("Endothelial Cell Lineage Subtypes")
+```
+
+## Endothelial UMAP by developmental group
+
+```{r endothelial-umap-group, fig.width=8, fig.height=6}
+DimPlot(
+  endo,
+  reduction = "umap",
+  group.by = "Donor_Group"
+) +
+  ggtitle("Endothelial Cells Across Developmental Groups")
+```
+
+## Canonical endothelial lineage markers
+
+```{r endothelial-featureplots, fig.width=12, fig.height=8}
+FeaturePlot(
+  endo,
+  features = c("PECAM1", "VWF", "EMCN", "CLDN5", "ACKR1", "PLVAP", "CAR4", "RGCC"),
+  reduction = "umap",
+  ncol = 4
+)
+```
+
+## Dot plot of endothelial markers by subtype
+
+```{r endothelial-dotplot, fig.width=10, fig.height=6}
+endo_markers <- c(
+  "PECAM1", "VWF", "EMCN", "CLDN5",
+  "ACKR1", "PLVAP", "CAR4", "RGCC"
+)
+
+DotPlot(
+  endo,
+  features = endo_markers,
+  group.by = "new_celltype"
+) +
+  RotatedAxis() +
+  ggtitle("Endothelial Lineage Marker Expression")
+```
+
+## Endothelial cell subtype proportion by group
+
+```{r endothelial-proportions}
+endo_prop <- endo@meta.data %>%
+  count(Donor_Group, new_celltype) %>%
+  group_by(Donor_Group) %>%
+  mutate(Proportion = n / sum(n))
+
+head(endo_prop)
+```
+
+```{r endothelial-proportion-plot, fig.width=10, fig.height=6}
+ggplot(endo_prop, aes(x = Donor_Group, y = Proportion, fill = new_celltype)) +
+  geom_bar(stat = "identity", position = "fill") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Proportion of endothelial cells") +
+  xlab("Developmental / disease group") +
+  ggtitle("Endothelial Cell Lineage Composition Across Groups")
+```
+
+## Save endothelial metadata and proportions
+
+```{r save-outputs}
+write.csv(
+  endo@meta.data,
+  "Endothelial_Cell_Metadata.csv",
+  row.names = TRUE
+)
+
+write.csv(
+  endo_prop,
+  "Endothelial_Cell_Proportions.csv",
+  row.names = FALSE
+)
+```
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```
