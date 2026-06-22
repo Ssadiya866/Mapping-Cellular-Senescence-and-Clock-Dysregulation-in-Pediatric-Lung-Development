@@ -1,0 +1,15 @@
+## Supplementary Figure 8C-Functional Enrichment Analysis of Core Upregulated Genes
+
+Gene Ontology enrichment analysis of core upregulated genes identified in impaired alveoli.
+
+### Workflow
+
+- Core upregulated genes were identified from differential expression analyses.
+- Gene Ontology enrichment analysis was performed using DAVID.
+- Significantly enriched biological processes were selected based on adjusted p-values.
+- Results were visualized as enrichment bar plots.
+
+### Software
+
+- DAVID Functional Annotation Tool
+- GraphPad Prism
