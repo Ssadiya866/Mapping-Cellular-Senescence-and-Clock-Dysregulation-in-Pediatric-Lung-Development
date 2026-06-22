@@ -1,0 +1,101 @@
+---
+title: "Supplementary Figure 11E"
+output: html_document
+date: "2026-05-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(networkD3)
+library(dplyr)
+library(htmlwidgets)
+
+links <- data.frame(
+  source = c(
+    "KMT2A","KMT2A","NANOG","NANOG","HSPA1A","HSPA1A",
+    "PCNA","PCNA","KRT8","KRT8","KRT7","KRT7",
+    "KLF4","KLF4","DNMT3A","DNMT3A","MYCT2","MYCT2",
+    "KDM6B","KDM6B","KRT15","KRT15","MYCT1","MYCT1",
+    "MYCBP2","MYCBP2","MYCBP2"
+  ),
+  target = c(
+    "MYC target gene regulation","Epigenetic regulation",
+    "Stem cell differentiation / pluripotency","TGF-beta signaling pathway",
+    "Growth factor response","ERK/MAPK signaling pathway",
+    "Cell cycle and DNA replication","MYC target gene regulation",
+    "Epithelial plasticity","TGF-beta signaling pathway",
+    "FGF signaling pathway","Epithelial plasticity",
+    "Beta-catenin signaling pathway","Stem cell differentiation / pluripotency",
+    "Epigenetic regulation","Metabolic regulation",
+    "Metabolic regulation","MYC target gene regulation",
+    "Epigenetic regulation","NOTCH signaling pathway",
+    "NOTCH signaling pathway","Epithelial plasticity",
+    "MYC target gene regulation","Beta-catenin signaling pathway",
+    "MYC target gene regulation","NOTCH signaling pathway","FGF signaling pathway"
+  ),
+  value = c(
+    4,2,
+    5,3,
+    3,2,
+    4,2,
+    5,3,
+    3,2,
+    4,3,
+    4,2,
+    3,2,
+    3,3,
+    4,3,
+    3,2,
+    4,3,2
+  ),
+  group = c(
+    "MYC","Epigenetic",
+    "Stemness","TGF",
+    "Growth","MAPK",
+    "CellCycle","MYC",
+    "Plasticity","TGF",
+    "FGF","Plasticity",
+    "WNT","Stemness",
+    "Epigenetic","Metabolic",
+    "Metabolic","MYC",
+    "Epigenetic","NOTCH",
+    "NOTCH","Plasticity",
+    "MYC","WNT",
+    "MYC","NOTCH","FGF"
+  )
+)
+
+nodes <- data.frame(
+  name = unique(c(links$source, links$target))
+)
+
+links$IDsource <- match(links$source, nodes$name) - 1
+links$IDtarget <- match(links$target, nodes$name) - 1
+
+colourScale <- '
+d3.scaleOrdinal()
+.domain(["MYC","FGF","Plasticity","Growth","MAPK","Metabolic","WNT","NOTCH","VEGF","Epigenetic","Stemness","CellCycle","TGF"])
+.range(["#d73027","#41b6c4","#80cdc1","#fdae61","#4575b4","#8073ac","#66bd63","#a6d96a","#f46d43","#999999","#fdb863","#c2a5cf","#1b9e77"])
+'
+
+p <- sankeyNetwork(
+  Links = links,
+  Nodes = nodes,
+  Source = "IDsource",
+  Target = "IDtarget",
+  Value = "value",
+  NodeID = "name",
+  LinkGroup = "group",
+  colourScale = colourScale,
+  fontSize = 20,
+  nodeWidth = 25,
+  nodePadding = 12,
+  sinksRight = TRUE
+)
+
+p
+```
+
