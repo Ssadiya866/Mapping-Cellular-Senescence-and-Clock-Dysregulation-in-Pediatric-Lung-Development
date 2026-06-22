@@ -1,0 +1,229 @@
+---
+title: "Supplementary_Fig8A-8BPlasticity and Senescence Gene Validation Heatmap"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+###############################################################
+# Plasticity and Senescence Gene Validation Heatmap
+#
+# Purpose:
+# Cross-validation of epithelial plasticity, transitional,
+# senescence-associated, and growth-factor genes using
+# integrated pediatric lung snRNA-seq data.
+#
+# Gene list was based on the first two heatmaps shown in
+# Supplementary Figure 8.
+#
+# Dataset:
+# lungQuery_After_AZ_Normalized.rds
+#
+# Groups:
+# PT_NEWBORN
+# FT_NEWBORN
+# PT_BPD
+#
+# Outputs:
+# PlasticitySenescence_RawAverageExpression.csv
+# PlasticitySenescence_RowZscore.csv
+# PlasticitySenescence_PLOTTED_MATRIX.csv
+# PlasticitySenescence_Heatmap.pdf
+# sessionInfo.txt
+###############################################################
+
+library(Seurat)
+library(Matrix)
+library(pheatmap)
+```
+
+```{r load-object}
+obj <- readRDS("lungQuery_After_AZ_Normalized.rds")
+
+stopifnot("Donor_Group" %in% colnames(obj@meta.data))
+```
+
+```{r define-genes}
+genes_use_input <- c(
+  "KLF4", "POU5F1", "MYC", "MYCBP2", "SOX2",
+  "HDAC3", "CTNNB1", "EP300", "CEBPB", "ID2",
+  "KMT2A", "KRT7", "KRT8",
+  "CDKN1A", "CDKN2A", "TP53", "GDF15",
+  "IL6ST", "CXCL8", "SERPINE1",
+  "FGF10", "FGFR2", "BMP4", "TGFB1",
+  "PDGFA", "IGF2"
+)
+```
+
+```{r define-groups}
+stage_order <- c(
+  "PT_NEWBORN",
+  "FT_NEWBORN",
+  "PT_BPD"
+)
+```
+
+```{r subset-object}
+obj_use <- subset(
+  obj,
+  subset = Donor_Group %in% stage_order
+)
+
+DefaultAssay(obj_use) <- "RNA"
+```
+
+```{r extract-expression}
+expr_mat <- GetAssayData(
+  obj_use,
+  assay = "RNA",
+  layer = "data"
+)
+```
+
+```{r check-genes}
+genes_present <- genes_use_input[
+  genes_use_input %in% rownames(expr_mat)
+]
+
+genes_missing <- genes_use_input[
+  !genes_use_input %in% rownames(expr_mat)
+]
+
+print("Genes present in object:")
+print(genes_present)
+
+print("Genes missing from object:")
+print(genes_missing)
+
+if (length(genes_present) == 0) {
+  stop("None of the selected genes were found in the dataset.")
+}
+```
+
+```{r average-expression}
+expr_sub <- expr_mat[genes_present, , drop = FALSE]
+
+meta <- obj_use@meta.data
+meta <- meta[colnames(expr_sub), , drop = FALSE]
+
+avg_exp <- sapply(stage_order, function(stage) {
+  cells <- rownames(meta)[meta$Donor_Group == stage]
+  Matrix::rowMeans(expr_sub[, cells, drop = FALSE])
+})
+
+avg_exp <- as.matrix(avg_exp)
+
+colnames(avg_exp) <- c(
+  "PT-NB",
+  "FT-NB",
+  "PT-BPD"
+)
+```
+
+```{r row-zscore}
+avg_z <- t(scale(t(avg_exp)))
+
+avg_z <- avg_z[
+  complete.cases(avg_z),
+  ,
+  drop = FALSE
+]
+```
+
+```{r clip-zscore}
+avg_z_clip <- avg_z
+
+avg_z_clip[avg_z_clip > 2] <- 2
+avg_z_clip[avg_z_clip < -2] <- -2
+```
+
+```{r plot-heatmap, fig.width=6, fig.height=9}
+pheatmap(
+  avg_z_clip,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  border_color = "black",
+  color = colorRampPalette(
+    c("#FFFFCC", "white", "#9B1B9E")
+  )(100),
+  breaks = seq(-2, 2, length.out = 101),
+  legend_breaks = c(-2, -1, 0, 1, 2),
+  legend_labels = c("-2", "-1", "0", "1", "2"),
+  fontsize_row = 10,
+  fontsize_col = 12,
+  cellwidth = 38,
+  cellheight = 20,
+  angle_col = 45,
+  main = "Plasticity and senescence-associated genes"
+)
+```
+
+```{r save-heatmap}
+pdf(
+  "PlasticitySenescence_Heatmap.pdf",
+  width = 6,
+  height = 9
+)
+
+pheatmap(
+  avg_z_clip,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  border_color = "black",
+  color = colorRampPalette(
+    c("#FFFFCC", "white", "#9B1B9E")
+  )(100),
+  breaks = seq(-2, 2, length.out = 101),
+  legend_breaks = c(-2, -1, 0, 1, 2),
+  legend_labels = c("-2", "-1", "0", "1", "2"),
+  fontsize_row = 10,
+  fontsize_col = 12,
+  cellwidth = 38,
+  cellheight = 20,
+  angle_col = 45,
+  main = "Plasticity and senescence-associated genes"
+)
+
+dev.off()
+```
+
+```{r export-source-data}
+write.csv(
+  avg_exp,
+  "PlasticitySenescence_RawAverageExpression.csv"
+)
+
+write.csv(
+  avg_z,
+  "PlasticitySenescence_RowZscore.csv"
+)
+
+write.csv(
+  avg_z_clip,
+  "PlasticitySenescence_PLOTTED_MATRIX.csv"
+)
+
+write.csv(
+  data.frame(
+    Genes_Used = genes_present
+  ),
+  "PlasticitySenescence_Genes_Used.csv",
+  row.names = FALSE
+)
+
+write.csv(
+  data.frame(
+    Genes_Missing = genes_missing
+  ),
+  "PlasticitySenescence_Genes_Missing.csv",
+  row.names = FALSE
+)
+```
+
+```{r session-info}
+writeLines(
+  capture.output(sessionInfo()),
+  "sessionInfo.txt"
+)
+
+sessionInfo()
+```
